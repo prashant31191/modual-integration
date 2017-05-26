@@ -1,1 +1,1 @@
-include ':app', ':appinfosdk'
+include ':app', ':appinfosdk', ':lib'
