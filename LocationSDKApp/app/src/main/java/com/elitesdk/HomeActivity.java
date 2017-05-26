@@ -79,6 +79,7 @@ public class HomeActivity extends AppCompatActivity implements AppInfoListener {
             strLog = strLog + "\n" ;
             strLog = strLog + "\n Latitude : "+sucessModel.getLocationLatLong().getLatitude();
             strLog = strLog + "\n Longitude : " +sucessModel.getLocationLatLong().getLongitude();
+            strLog = strLog + "\n AdvertisingId : "+sucessModel.getAdvertisingId();
             strLog = strLog + "\n MacAdressId : "+sucessModel.getMacAdressId();
             strLog = strLog + "\n SHA256-MacAdressId : "+sucessModel.getSha256MacAdressId();
             strLog = strLog + "\n SSID : "+sucessModel.getWifiSSID();

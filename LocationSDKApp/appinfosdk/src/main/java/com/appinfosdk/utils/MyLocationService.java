@@ -4,8 +4,12 @@ package com.appinfosdk.utils;
  * Created by prashant.patel on 5/25/2017.
  */
 import android.Manifest;
+import android.app.AlertDialog;
+import android.app.KeyguardManager;
+import android.app.SearchManager;
 import android.app.Service;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -13,10 +17,14 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.WindowManager;
+
+
 
 public class MyLocationService extends Service
 {
@@ -26,6 +34,8 @@ public class MyLocationService extends Service
     private static final int LOCATION_INTERVAL = 1000;
     private static final float LOCATION_DISTANCE = 0f;
     private String advertisingId = "";
+    private String macAdressId = "";
+    private String sha256MacAdressId = "";
 
 
 
@@ -51,10 +61,12 @@ public class MyLocationService extends Service
 
                 sucessModel.locationLatLong = location;
                 sucessModel.advertisingId = advertisingId;
+
                 // get mac adress from your device
-                sucessModel.macAdressId = MacAdressId.getMacAddr();
+                sucessModel.macAdressId = macAdressId;
                 // get Mac Adress Id encrypt to SHA256
-                sucessModel.sha256MacAdressId = MacAdressId.encryptSHA256(sucessModel.macAdressId);
+                sucessModel.sha256MacAdressId = sha256MacAdressId;
+
                 sucessModel.wifiSSID = MacAdressId.getWifiSSIDN(mContext);
 
                 AppInfoSet appInfoSet = new AppInfoSet();
@@ -115,6 +127,11 @@ public class MyLocationService extends Service
         mContext = getApplicationContext();
         getAdvertisingId();
 
+        macAdressId = MacAdressId.getMacAddr();
+        sha256MacAdressId = MacAdressId.encryptSHA256(macAdressId);
+
+        statusCheck();
+
         super.onStartCommand(intent, flags, startId);
         return START_STICKY;
     }
@@ -124,8 +141,8 @@ public class MyLocationService extends Service
     {
         Log.e(TAG, "onCreate");
         mContext = getApplicationContext();
-        boolean isLocation = isLocationServicesAvailable(mContext);
-        Log.e(TAG, "==isLocationServicesAvailable===isLocation=="+isLocation);
+        //statusCheck();
+
         initializeLocationManager();
         try {
             mLocationManager.requestLocationUpdates(
@@ -208,6 +225,95 @@ public class MyLocationService extends Service
     }
 
 
+    public void statusCheck() {
+        final LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            buildAlertMessageNoGps();
+        }
+    }
+
+    AlertDialog.Builder builder;
+    AlertDialog  alert;
+    private void buildAlertMessageNoGps() {
+
+        if(alert!=null && alert.isShowing())
+        {
+            alert.dismiss();
+        }
+
+        KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+        KeyguardManager.KeyguardLock kl = km.newKeyguardLock("MyKeyguardLock");
+        kl.disableKeyguard();
+
+        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        PowerManager.WakeLock wakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK| PowerManager.ACQUIRE_CAUSES_WAKEUP
+                | PowerManager.ON_AFTER_RELEASE, "MyWakeLock");
+        wakeLock.acquire();
+
+
+        builder = new AlertDialog.Builder(getApplicationContext());
+        builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
+                .setCancelable(false)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(final DialogInterface dialog, final int id) {
+                        Intent intent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        intent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    public void onClick(final DialogInterface dialog, final int id) {
+                        dialog.cancel();
+                    }
+                });
+
+        alert = builder.create();
+        alert.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+        alert.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON|
+                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD|
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED|
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+
+
+        alert.show();
+
+        alert.setOnDismissListener(new DialogInterface.OnDismissListener() {
+
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                dialog.cancel();
+            }
+        });
+
+
+        alert.setOnCancelListener(new DialogInterface.OnCancelListener() {
+
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                dialog.cancel();
+            }
+        });
+
+
+    }
+    private void buildAlertMessageNoGps2() {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(getApplicationContext());
+        builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
+                .setCancelable(false)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(final DialogInterface dialog, final int id) {
+                        startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    public void onClick(final DialogInterface dialog, final int id) {
+                        dialog.cancel();
+                    }
+                });
+        final AlertDialog alert = builder.create();
+        alert.show();
+    }
 
     public static boolean isLocationServicesAvailable(Context context) {
         int locationMode = 0;

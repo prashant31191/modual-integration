@@ -7,12 +7,19 @@
     <!--for the get wifi mac id and ssid-->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
 
-    <!--for the device lock handel-->
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+
+
 
     <!--for the getting location-->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+
+    <!--for the alert dailog-->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD"/>
+
+    <!--for the device lock handel-->
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <application android:allowBackup="true" android:label="@string/app_name"
         android:supportsRtl="true">
